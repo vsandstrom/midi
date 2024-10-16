@@ -70,7 +70,7 @@ pub fn cont(port: Arc<Mutex<MidiOutputConnection>>) {
   }
 }
 
-pub fn clock(port: Arc<Mutex<MidiOutputConnection>>, bpm: f64, run: AtomicBool) {
+pub fn clock(port: Arc<Mutex<MidiOutputConnection>>, bpm: f64, run: Arc<AtomicBool>) {
   let dur = Duration::from_secs_f64(calc_midi_ppq(bpm));
   let spin_sleeper = SpinSleeper::new(10_000)
     .with_spin_strategy(SpinStrategy::YieldThread);
