@@ -1,9 +1,6 @@
 use std::{
-  sync::{
-    Arc,
-    Mutex
-  },
-  time::Duration
+  sync::{atomic::AtomicBool, Arc, Mutex}, 
+  time::{Duration, SystemTime}
 };
 
 use midir::MidiOutputConnection;
@@ -73,16 +70,19 @@ pub fn cont(port: Arc<Mutex<MidiOutputConnection>>) {
   }
 }
 
-pub fn clock(port: Arc<Mutex<MidiOutputConnection>>, bpm: f64) {
+pub fn clock(port: Arc<Mutex<MidiOutputConnection>>, bpm: f64, run: AtomicBool) {
   let dur = Duration::from_secs_f64(calc_midi_ppq(bpm));
   let spin_sleeper = SpinSleeper::new(10_000)
     .with_spin_strategy(SpinStrategy::YieldThread);
 
-  loop {
+  'clock: loop {
+    let now = SystemTime::now();
+    if run.load(std::sync::atomic::Ordering::Acquire) { break 'clock }
     if let Ok(mut p) = port.try_lock() {
       p .send(&[0b11111000]) .unwrap()
     }
-    spin_sleeper.sleep(dur)
+    let diff = SystemTime::now().duration_since(now).unwrap();
+    spin_sleeper.sleep(dur - diff)
   }
 }
 
