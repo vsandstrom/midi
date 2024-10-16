@@ -77,7 +77,7 @@ pub fn clock(port: Arc<Mutex<MidiOutputConnection>>, bpm: f64, run: Arc<AtomicBo
 
   'clock: loop {
     let now = SystemTime::now();
-    if run.load(std::sync::atomic::Ordering::Acquire) { break 'clock }
+    if !run.load(std::sync::atomic::Ordering::Acquire) { break 'clock }
     if let Ok(mut p) = port.try_lock() {
       p .send(&[0b11111000]) .unwrap()
     }
