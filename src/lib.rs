@@ -20,7 +20,12 @@ const START:      u8 = 0b11111010;
 const STOP:       u8 = 0b11111100;
 const CONTINUE:   u8 = 0b11111011;
 
+/// Contains the address component of an NRPN message
+/// It is up to the user to use valid numbers [0 - 127]
 pub struct Addr { msb: u8, lsb: u8 }
+
+/// Contains the data component of an NRPN message
+/// It is up to the user to use valid numbers [0 - 127]
 pub struct Data { coarse: u8, fine: u8 }
 
 impl Addr {
@@ -37,12 +42,14 @@ impl Data {
   }
 }
 
+/// Send a MIDI message
 pub fn cc(port: Arc<Mutex<MidiOutputConnection>>, ch: u8, addr: u8, val: u8) {
   if let Ok(mut p) = port.try_lock() {
     p.send(&[CC | ch, addr, val]).unwrap()
   }
 }
 
+/// Sends a string of 4 midi messages, manifesting as NRPN message.
 pub fn nrpn(port: Arc<Mutex<MidiOutputConnection>>, ch: u8, addr: &Addr, val: &Data) {
   if let Ok(mut p) = port.try_lock() {
     p.send(&[(CC|ch), NRPN_MSB, addr.msb]).unwrap();
