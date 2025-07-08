@@ -99,10 +99,17 @@ pub fn cc(port: &Arc<Mutex<MidiOutputConnection>>, ch: u8, addr: u8, val: u8) {
 /// Sends a string of 4 midi messages, manifesting as NRPN message.
 pub fn nrpn(port: &Arc<Mutex<MidiOutputConnection>>, ch: u8, addr: &Addr, val: &Data) {
   if let Ok(mut p) = port.try_lock() {
-    p.send(&[(CC|ch), NRPN_MSB, addr.msb]).unwrap();
-    p.send(&[(CC|ch), NRPN_LSB, addr.lsb]).unwrap();
-    p.send(&[(CC|ch), NRPN_DATA1, val.coarse]).unwrap();
-    p.send(&[(CC|ch), NRPN_DATA2, val.fine]).unwrap();
+    let x = [
+      p.send(&[(CC|ch), NRPN_MSB, addr.msb]),
+      p.send(&[(CC|ch), NRPN_LSB, addr.lsb]),
+      p.send(&[(CC|ch), NRPN_DATA1, val.coarse]),
+      p.send(&[(CC|ch), NRPN_DATA2, val.fine]),
+    ];
+    x.map(|e| match e {
+      Err(SendError::InvalidData(e)) => panic!("{e}"),
+      Err(SendError::Other(e)) => panic!("{e}"),
+      _ => ()
+    });
   }
 }
 
