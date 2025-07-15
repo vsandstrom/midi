@@ -1,7 +1,8 @@
-use midir::MidiOutputPort;
-
-use super::{MidiOutputConnection, MidiOutput};
-use super::{Arc, Mutex};
+use crate::{
+  Arc, Mutex, MidiOutputConnection,
+  util::logging::err_log
+};
+use midir::{MidiOutputPort, ConnectError, MidiOutput};
 
 #[derive(Clone)]
 /// Convenience struct for creating a reference counted MIDI connection
@@ -36,15 +37,37 @@ impl MIDIConnection {
     }
   } 
 
-  pub fn new(device: &'static str) -> Result<Self, String> {
+  fn init(device: &'static str) -> Result<MidiOutputConnection, String> {
     // Setup new MIDI output client, (should not fail).
     let output = Self::init_client()?;
     // See if there is a device that corresponds to requested port.
     let port = Self::validate_port(&output, device, output.ports())?;
     // create output connection
-    let conn = Self::connect(output, &port, device)?;
-    Ok( Self{ conn: Arc::new( Mutex::new(conn)) })
+    Self::connect(output, &port, device)
+  }
+
+  pub fn new(device: &'static str) -> Self {
+    match Self::init(device) {
+      Ok(c) => Self{conn: Arc::new(Mutex::new(c))},
+      Err(e) => err_log(e)
+    }
   }
 
   pub fn get_conn(&mut self) -> Arc<Mutex<MidiOutputConnection>> { self.conn.clone() }
+}
+
+
+
+pub fn fetch_output_port(name: &str) -> Result<MidiOutputConnection, ConnectError<MidiOutput>> {
+  let output = MidiOutput::new("cpu").expect("could not create MIDI output");
+  let ports = output.ports();
+  
+  let port = ports
+    .iter()
+    .find(|p| name == output
+      .port_name(p)
+      .unwrap())
+    .expect("digitakt is not available as midi output");
+  
+  output.connect(port, name)
 }
