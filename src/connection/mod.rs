@@ -1,18 +1,40 @@
 use crate::{
-  Arc, Mutex, MidiOutputConnection,
-  util::logging::err_log
+  util::logging::err_log,
+  MidiOutputConnection
 };
-use midir::{MidiOutputPort, ConnectError, MidiOutput};
 
-#[derive(Clone)]
+use midir::{ConnectError, MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputPort};
+
+// #[derive(Clone)]
 /// Convenience struct for creating a reference counted MIDI connection
 /// ```
 ///
 /// let port = MIDIConnection::new("Digitakt II").unwrap();
-/// 
+/// 
 /// ```
-pub struct MIDIConnection { conn: Arc<Mutex<MidiOutputConnection>> }
-impl MIDIConnection {
+pub struct Output{ 
+  conn: MidiOutputConnection,
+}
+
+// pub struct Input<&'static State> { 
+//   conn: MidiInputConnection<State>
+// }
+
+impl Output{
+  pub fn new(device: &'static str) -> Self {
+    match Self::init(device) {
+      Ok(c) => Self{
+        conn: c,
+      },
+      Err(e) => err_log(e)
+    }
+  }
+
+  // pub fn get_conn(&mut self) -> Arc<Mutex<MidiOutputConnection>> { self.conn }
+  pub fn send(&mut self, message: &[u8]) -> Result<(), midir::SendError> {
+    self.conn.send(message)
+  }
+
   fn init_client() -> Result<MidiOutput, String> {
     match MidiOutput::new("cpu") {
       Ok(output) => Ok(output),
@@ -45,18 +67,11 @@ impl MIDIConnection {
     // create output connection
     Self::connect(output, &port, device)
   }
-
-  pub fn new(device: &'static str) -> Self {
-    match Self::init(device) {
-      Ok(c) => Self{conn: Arc::new(Mutex::new(c))},
-      Err(e) => err_log(e)
-    }
-  }
-
-  pub fn get_conn(&mut self) -> Arc<Mutex<MidiOutputConnection>> { self.conn.clone() }
 }
 
-
+// impl Input {
+//
+// }
 
 pub fn fetch_output_port(name: &str) -> Result<MidiOutputConnection, ConnectError<MidiOutput>> {
   let output = MidiOutput::new("cpu").expect("could not create MIDI output");
@@ -71,3 +86,4 @@ pub fn fetch_output_port(name: &str) -> Result<MidiOutputConnection, ConnectErro
   
   output.connect(port, name)
 }
+

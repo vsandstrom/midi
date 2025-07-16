@@ -1,6 +1,7 @@
 use crate::{
   Arc, Mutex, MidiOutputConnection,
   util::logging::err_send_log,
+  connection::Output
 };
 
 use std::marker::PhantomData;
@@ -12,7 +13,7 @@ const RPN_MSB:    u8 = 0x65;
 const RPN_LSB:    u8 = 0x64;
 const NRPN_DATA1: u8 = 0x06;
 const NRPN_DATA2: u8 = 0x26;
-const CC:         u8 = 0b10110000;
+const CC:         u8 = 0xB0;
 
 #[derive(Debug, Clone)]
 pub enum MidiMessageError {
@@ -49,12 +50,12 @@ pub trait FourteenBit {
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum RpnKind{
-  PitchBend      = 0x0000,
-  FineTune       = 0x0001,
-  CoarseTune     = 0x0002,
-  TuneProgChange = 0x0003,
-  TuneBankSel    = 0x0004,
-  ModDepthRange  = 0x0005
+  PitchBend      = 0x00,
+  FineTune       = 0x01,
+  CoarseTune     = 0x02,
+  TuneProgChange = 0x03,
+  TuneBankSel    = 0x04,
+  ModDepthRange  = 0x05
 }
 
 pub struct Message<T: MessageKind> {
@@ -192,7 +193,7 @@ impl<T: MessageKind> Message<T> {
   /// or bigger than (128, 128) if ['Message<Nrpn'],
   /// because the underlying ['MidiOutputConnection']
   /// from the ['midir'](https://github.com/Boddlnagg/midir) crate allows this. 
-  pub fn message(&self, port: &Arc<Mutex<MidiOutputConnection>>, ch: u8) { 
+  pub fn message(&self, port: &Arc<Mutex<Output>>, ch: u8) { 
     let msg = T::to_bytes(&self.addr, &self.val, ch);
     if let Ok(mut p) = port.try_lock() {
       err_send_log(p.send(&msg))

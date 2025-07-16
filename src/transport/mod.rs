@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, SystemTime};
-use crate::{Arc, Mutex, MidiOutputConnection,
+use crate::{Arc, Mutex, connection::Output,
   util::{
     logging::err_send_log,
     calc_midi_ppq
@@ -12,26 +12,33 @@ pub use spin_sleep::{SpinSleeper, SpinStrategy, sleep};
 const START:      u8 = 0b11111010;
 const STOP:       u8 = 0b11111100;
 const CONTINUE:   u8 = 0b11111011;
+const CLOCK:      u8 = 0b11111000;
 
-pub fn start(port: &Arc<Mutex<MidiOutputConnection>>) {
+pub fn start(port: &Arc<Mutex<Output>>) {
   if let Ok(mut p) = port.try_lock() {
     err_send_log(p.send(&[START]));
   }
 }
 
-pub fn stop(port: &Arc<Mutex<MidiOutputConnection>>) {
+pub fn stop(port: &Arc<Mutex<Output>>) {
   if let Ok(mut p) = port.try_lock() {
     err_send_log(p.send(&[STOP]));
   }
 }
 
-pub fn cont(port: &Arc<Mutex<MidiOutputConnection>>) {
+pub fn cont(port: &Arc<Mutex<Output>>) {
   if let Ok(mut p) = port.try_lock() {
     err_send_log(p.send(&[CONTINUE]));
   }
 }
 
-pub fn clock(port: &Arc<Mutex<MidiOutputConnection>>, bpm: f64, run: Arc<AtomicBool>) {
+pub fn clock(port: &Arc<Mutex<Output>>) {
+  if let Ok(mut p) = port.try_lock() {
+    err_send_log(p.send(&[CLOCK]));
+  }
+}
+
+pub fn transport(port: &Arc<Mutex<Output>>, bpm: f64, run: Arc<AtomicBool>) {
   let dur = Duration::from_secs_f64(calc_midi_ppq(bpm));
   let spin_sleeper = SpinSleeper::new(10_000)
     .with_spin_strategy(SpinStrategy::YieldThread);
