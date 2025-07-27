@@ -1,19 +1,13 @@
 use crate::{
-  Arc, Mutex, MidiOutputConnection,
+  Arc, Mutex,
   util::logging::err_send_log,
-  connection::Output
+  connection::Output,
+  consts::message::{CC, NRPN_MSB, NRPN_LSB, NRPN_DATA1, NRPN_DATA2, RPN_MSB, RPN_LSB}
 };
 
 use std::marker::PhantomData;
 use std::result;
 
-const NRPN_MSB:   u8 = 0x63;
-const NRPN_LSB:   u8 = 0x62;
-const RPN_MSB:    u8 = 0x65;
-const RPN_LSB:    u8 = 0x64;
-const NRPN_DATA1: u8 = 0x06;
-const NRPN_DATA2: u8 = 0x26;
-const CC:         u8 = 0xB0;
 
 #[derive(Debug, Clone)]
 pub enum MidiMessageError {

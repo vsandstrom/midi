@@ -4,15 +4,12 @@ use crate::{Arc, Mutex, connection::Output,
   util::{
     logging::err_send_log,
     calc_midi_ppq
-  }
+  },
+  consts::transport::{START, STOP, CONTINUE, CLOCK}
 };
 /// re-export from spin_sleep crate
 pub use spin_sleep::{SpinSleeper, SpinStrategy, sleep};
 
-const START:      u8 = 0b11111010;
-const STOP:       u8 = 0b11111100;
-const CONTINUE:   u8 = 0b11111011;
-const CLOCK:      u8 = 0b11111000;
 
 pub fn start(port: &Arc<Mutex<Output>>) {
   if let Ok(mut p) = port.try_lock() {
