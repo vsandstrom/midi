@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::{
   util::logging::err_log,
   MidiOutputConnection,
@@ -11,17 +13,12 @@ use midir::{
   MidiOutput,
   MidiOutputPort
 };
-use std::{
-  collections::VecDeque, marker::PhantomData, sync::{Arc, Mutex}
-};
 
 
-// #[derive(Clone)]
-/// Convenience struct for creating a reference counted MIDI connection
+
+/// Convenience struct for creating a Midi Output connection
 /// ```
-///
-/// let port = MIDIConnection::new("Digitakt II").unwrap();
-/// 
+/// let port = midi::connection::Output::new("IAC Driver Bus 1").unwrap();
 /// ```
 pub struct Output{ 
   conn: MidiOutputConnection,
@@ -76,22 +73,37 @@ impl Output {
   }
 }
 
-
-
-pub type MidiQueue = VecDeque<Vec<u8>>;
-
-#[allow(unused)]
-pub struct Input<F: FnMut(u64, &[u8], &mut Arc<Mutex<MidiQueue>>) + Send + 'static>
+/// Convenience struct for creating a Midi Input connection
+/// ```
+/// use std::collection::VecDeque;
+/// use std::sync::{Arc, Mutex};
+/// let port = midi::connection::Input::new(
+///         "IAC Driver Bus 1",
+///         Arc<Mutex<VecDeque<Vec<u8>>>>,
+///         |timecode, message, data| {
+///           print!("{timecode}:: ");
+///           message.iter().for_each(|byte| {print!("{byte:b}")});
+///           println!();
+///         }
+///     ).unwrap();
+/// ```
+pub struct Input<T, F>
+  where 
+    T: Send + 'static,
+    F: FnMut(u64, &[u8], &mut T) + Send + 'static,
 {
-  pub conn: MidiInputConnection<Arc<Mutex<MidiQueue>>>,
+  pub conn: MidiInputConnection<T>,
   _marker: PhantomData<F>
 }
 
-impl<F: for <'a, 'b> FnMut(u64, &'a [u8], &'b mut Arc<Mutex<MidiQueue>>) +Send + 'static> Input<F>
+impl<T, F> Input<T, F>
+  where 
+    T: Send + 'static,
+    F: FnMut(u64, &[u8], &mut T) + Send + 'static,
 {
-  pub fn new(device: &'static str, queue: Arc<Mutex<MidiQueue>>, callback: F) -> Self
+  pub fn new(device: &'static str, data: T, callback: F) -> Self
   {
-    match Self::init(device, queue, callback) {
+    match Self::init(device, data, callback) {
       Ok(c) => Self{
         conn: c,
         _marker: PhantomData
@@ -100,9 +112,9 @@ impl<F: for <'a, 'b> FnMut(u64, &'a [u8], &'b mut Arc<Mutex<MidiQueue>>) +Send +
     }
   }
 
-  fn connect(input: MidiInput, port: &MidiInputPort, device: &'static str, queue: Arc<Mutex<MidiQueue>>, callback: F) -> Result<MidiInputConnection<Arc<Mutex<MidiQueue>>>, String> {
+  fn connect(input: MidiInput, port: &MidiInputPort, device: &'static str, data: T, callback: F) -> Result<MidiInputConnection<T>, String> {
 
-    match input.connect(port, device, callback, queue.clone()) {
+    match input.connect(port, device, callback, data) {
 
       Ok(conn) => Ok(conn),
       Err(e) => Err(format!("could not connect to output port: {}", e))
@@ -110,10 +122,10 @@ impl<F: for <'a, 'b> FnMut(u64, &'a [u8], &'b mut Arc<Mutex<MidiQueue>>) +Send +
   } 
 
 
-  fn init(device: &'static str, queue: Arc<Mutex<MidiQueue>>, callback: F) -> Result<MidiInputConnection<Arc<Mutex<MidiQueue>>>, String> {
+  fn init(device: &'static str, data: T, callback: F) -> Result<MidiInputConnection<T>, String> {
     let input = Self::init_client()?;
     let port = Self::validate_port(&input, device, input.ports())?;
-    Self::connect(input, &port, device, queue, callback)
+    Self::connect(input, &port, device, data, callback)
   }
   
   fn init_client() -> Result<MidiInput, String> {
