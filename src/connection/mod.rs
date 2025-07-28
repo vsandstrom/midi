@@ -6,14 +6,13 @@ use crate::{
 };
 
 use midir::{
-  ConnectError,
+  ConnectError, 
   MidiInput,
   MidiInputConnection,
   MidiInputPort,
   MidiOutput,
   MidiOutputPort
 };
-
 
 
 /// Convenience struct for creating a Midi Output connection
@@ -112,22 +111,23 @@ impl<T, F> Input<T, F>
     }
   }
 
+  #[inline]
   fn connect(input: MidiInput, port: &MidiInputPort, device: &'static str, data: T, callback: F) -> Result<MidiInputConnection<T>, String> {
-
     match input.connect(port, device, callback, data) {
-
       Ok(conn) => Ok(conn),
       Err(e) => Err(format!("could not connect to output port: {}", e))
     }
   } 
 
 
+  #[inline]
   fn init(device: &'static str, data: T, callback: F) -> Result<MidiInputConnection<T>, String> {
     let input = Self::init_client()?;
     let port = Self::validate_port(&input, device, input.ports())?;
     Self::connect(input, &port, device, data, callback)
   }
   
+  #[inline]
   fn init_client() -> Result<MidiInput, String> {
     match MidiInput::new("cpu") {
       Ok(input) => Ok(input),
@@ -135,21 +135,20 @@ impl<T, F> Input<T, F>
     }
   }
 
+  #[inline]
   fn validate_port(input: &MidiInput, device: &'static str, ports: Vec<MidiInputPort>) -> Result<MidiInputPort, String> {
-    ports.iter().for_each(|p| println!("{}", input.port_name(p).unwrap()));
-
     match ports
       .iter()
       .find(|p| 
         Some(device) == input.port_name(p).ok().as_deref()) {
       Some(p) => Ok(p.clone()),
-      None => Err("could not find input port".to_owned())
+      None => Err(format!("could not find input port: {device}").to_owned())
     }
   }
 }
 
 pub fn fetch_output_port(name: &str) -> Result<MidiOutputConnection, ConnectError<MidiOutput>> {
-  let output = MidiOutput::new("cpu").expect("could not create MIDI output");
+  let output = MidiOutput::new("cpu").unwrap_or_else(|_| panic!("could not create MIDI output"));
   let ports = output.ports();
   
   let port = ports
@@ -157,8 +156,9 @@ pub fn fetch_output_port(name: &str) -> Result<MidiOutputConnection, ConnectErro
     .find(|p| name == output
       .port_name(p)
       .unwrap())
-    .expect("digitakt is not available as midi output");
+    .unwrap_or_else(|| panic!("{name} is not available as midi output"));
   
   output.connect(port, name)
+
 }
 
