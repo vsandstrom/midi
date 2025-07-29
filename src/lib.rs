@@ -24,7 +24,7 @@ pub mod note;
 pub mod transport;
 pub mod message;
 pub mod util;
-pub mod sequencer;
+// pub mod sequencer;
 /// Contains bitmasks and utility numbers for identifying and sending MIDI messages
 /// ```
 /// // example

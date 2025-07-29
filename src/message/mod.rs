@@ -6,7 +6,6 @@ use crate::{
 };
 
 use std::marker::PhantomData;
-use std::result;
 
 
 #[derive(Debug, Clone)]
