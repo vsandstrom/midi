@@ -12,24 +12,48 @@ use midir::{
   MidiOutput,
   MidiOutputPort
 };
+use std::sync::{Arc, Mutex};
 
 
-/// Convenience struct for creating a Midi Output connection
+
+/// Convenience struct for creating a Midi Output connection.
+/// Provides the option to create a Midi runner callback closure. 
 /// ```
-/// let port = midi::connection::Output::new("IAC Driver Bus 1").unwrap();
+/// use std::time::Duration;
+/// use midi::{note::{note_on, note_off}, transport::sleep};
+/// let port = midi::connection::Output::new("IAC Driver Bus 1", |output| {
+///    for _ in 0..1 {
+///         midi::note::note_on(&output, 0, midi::consts::MIDDLE_C, 100);
+///         sleep(Duration::new(1, 0));
+///         midi::note::note_off(&output, 0, midi::consts::MIDDLE_C);
+///         sleep(Duration::new(1, 0));
+///     }
+/// });
 /// ```
-pub struct Output{ 
+pub struct Output { 
   conn: MidiOutputConnection,
 }
 
 impl Output {
-  pub fn new(device: &'static str) -> Self {
+  /// Returns a reference counted instance of a Midi Output representation. 
+  ///
+  /// If no closure is passed to the constructor, the `Self` is returned,
+  /// otherwise it will return after the callback has finished. 
+  pub fn new<F>(device: &'static str, callback: F) -> Arc<Mutex<Self>>
+    where F: Fn(Arc<Mutex<Output>>),
+  {
     match Self::init(device) {
-      Ok(c) => Self{
-        conn: c,
+
+      Ok(c) => {
+        let output = Self{ conn: c };
+        let arc_output = Arc::new(Mutex::new(output));
+        callback(arc_output.clone());
+        arc_output
       },
       Err(e) => err_log(e)
     }
+
+
   }
 
   // pub fn get_conn(&mut self) -> Arc<Mutex<MidiOutputConnection>> { self.conn }
@@ -37,9 +61,12 @@ impl Output {
     self.conn.send(message)
   }
 
-  fn connect(output: MidiOutput, port: &MidiOutputPort, device: &'static str) -> Result<MidiOutputConnection, String> {
+  fn connect(output: MidiOutput, port: &MidiOutputPort, device: &'static str) -> Result<MidiOutputConnection, String> 
+  {
     match output.connect(port, device) {
-      Ok(conn) => Ok(conn),
+      Ok(conn) => {
+        Ok(conn)
+      },
       Err(e) => Err(format!("could not connect to output port: {}", e))
     }
   } 
@@ -57,17 +84,19 @@ impl Output {
 
 /// Convenience struct for creating a Midi Input connection
 /// ```
-/// use std::collection::VecDeque;
+/// use std::collections::VecDeque;
 /// use std::sync::{Arc, Mutex};
+///
+/// let data = Arc::new(Mutex::new(VecDeque::<Vec<u8>>::new()));
 /// let port = midi::connection::Input::new(
-///         "IAC Driver Bus 1",
-///         Arc<Mutex<VecDeque<Vec<u8>>>>,
+///     "IAC Driver Bus 1",
+///     data,
 ///         |timecode, message, data| {
-///           print!("{timecode}:: ");
-///           message.iter().for_each(|byte| {print!("{byte:b}")});
-///           println!();
+///             print!("{timecode}:: ");
+///             message.iter().for_each(|byte| {print!("{byte:b}")});
+///             println!();
 ///         }
-///     ).unwrap();
+///     );
 /// ```
 pub struct Input<T, F>
   where 
