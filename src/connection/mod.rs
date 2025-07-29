@@ -18,13 +18,15 @@ use midir::{
 /// ```
 /// let port = midi::connection::Output::new("IAC Driver Bus 1").unwrap();
 /// ```
-pub struct Output{ 
+pub struct Output { 
   conn: MidiOutputConnection,
 }
 
 impl Output {
-  pub fn new(device: &'static str) -> Self {
-    match Self::init(device) {
+  pub fn new<F>(device: &'static str, callback: F) -> Self 
+    where F: Fn(&MidiOutputConnection),
+  {
+    match Self::init(device, callback) {
       Ok(c) => Self{
         conn: c,
       },
@@ -37,20 +39,27 @@ impl Output {
     self.conn.send(message)
   }
 
-  fn connect(output: MidiOutput, port: &MidiOutputPort, device: &'static str) -> Result<MidiOutputConnection, String> {
+  fn connect<F>(output: MidiOutput, port: &MidiOutputPort, device: &'static str, callback: F) -> Result<MidiOutputConnection, String> 
+    where F: Fn(&MidiOutputConnection),
+  {
     match output.connect(port, device) {
-      Ok(conn) => Ok(conn),
+      Ok(conn) => {
+        callback(&conn);
+        Ok(conn)
+      },
       Err(e) => Err(format!("could not connect to output port: {}", e))
     }
   } 
 
-  fn init(device: &'static str) -> Result<MidiOutputConnection, String> {
+  fn init<F>(device: &'static str, callback: F) -> Result<MidiOutputConnection, String> 
+    where F: Fn(&MidiOutputConnection),
+  {
     // Setup new MIDI output client, (should not fail).
     let output = Self::init_client()?;
     // See if there is a device that corresponds to requested port.
     let port = Self::validate_port(&output, device, output.ports())?;
     // create output connection
-    Self::connect(output, &port, device)
+    Self::connect(output, &port, device, callback)
   }
 }
 
