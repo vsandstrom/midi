@@ -39,8 +39,8 @@ impl Output {
   ///
   /// If no closure is passed to the constructor, the `Self` is returned,
   /// otherwise it will return after the callback has finished. 
-  pub fn new<F>(device: &'static str, callback: F) -> Arc<Mutex<Self>>
-    where F: Fn(Arc<Mutex<Output>>),
+  pub fn new<F>(device: &'static str, mut callback: F) -> Arc<Mutex<Self>>
+    where F: FnMut(Arc<Mutex<Output>>),
   {
     match Self::init(device) {
 
