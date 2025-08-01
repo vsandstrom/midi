@@ -1,3 +1,9 @@
+pub mod cc;
+pub mod nrpn;
+pub mod rpn;
+pub mod sysex;
+pub mod note;
+
 use std::borrow::Cow;
 use crate::{
   connection::Output, 
@@ -10,22 +16,25 @@ use crate::{
     RPN_LSB,
     RPN_MSB,
     RPN_VAL_LSB,
-    RPN_VAL_MSB},
+    RPN_VAL_MSB,
+  },
+  consts::note::{NOTE_ON, NOTE_OFF, DEFAULT_NOTE_OFF_VEL},
   util::logging::err_send_log,
   Arc,
   Mutex
 };
 
-#[derive(Debug, Clone)]
-pub enum MidiMessageError {
-  Address(String),
-  Value(String)
+use cc::Cc;
+use nrpn::Nrpn;
+use rpn::{Rpn, RpnKind};
+use sysex::SysEx;
+use note::{NoteOff, NoteOn};
+
+#[derive(Clone, Copy, Debug)]
+pub struct Message<T: MessageKind> {
+  kind: T
 }
 
-pub struct Nrpn { pub addr: (u8,u8), pub val: (u8, u8) }
-pub struct Rpn  { pub addr: RpnKind, pub val: (u8, u8) }
-pub struct Cc   { pub addr: u8,      pub val: u8       }
-pub struct SysEx<'a> { pub data: Cow<'a, [u8]> }
 
 pub trait MessageKind {
   /// Returns a MIDI message formatted in bytes
@@ -40,140 +49,18 @@ pub trait MessageKind {
   fn repr_addr(&self) -> String;
 }
 
+#[derive(Debug, Clone)]
+pub enum MidiMessageError {
+  Address(String),
+  Value(String)
+}
+
 pub trait FourteenBit {
   fn split(num: u16) -> (u8, u8) {
     ((num >> 7) as u8, (num & 0b0111_1111) as u8)
   }
 }
 
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
-pub enum RpnKind{
-  PitchBend      = 0x00,
-  FineTune       = 0x01,
-  CoarseTune     = 0x02,
-  TuneProgChange = 0x03,
-  TuneBankSel    = 0x04,
-  ModDepthRange  = 0x05
-}
-
-pub struct Message<T: MessageKind> {
-  kind: T
-}
-
-impl MessageKind for Nrpn {
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
-      vec![
-        CC|ch, NRPN_MSB, self.addr.0, CC|ch, NRPN_LSB, self.addr.1, 
-        CC|ch, NRPN_VAL_MSB, self.val.0, CC|ch, NRPN_VAL_LSB, self.val.1, 
-        CC|ch, NRPN_MSB, 127, CC|ch, NRPN_LSB, 127 // NULL 
-      ]
-  }
-
-  #[inline]
-  fn validate_address(&self) -> bool {
-    let (msb, lsb) = self.addr;
-    msb < 128 && lsb < 128
-  }
-  
-  #[inline]
-  fn validate_value(&self) -> bool {
-    let (coarse, fine) = self.val;
-    coarse < 128 && fine < 128
-  }
-
-  #[inline]
-  fn repr(&self) -> String {
-      let (coarse, fine) = self.val;
-      format!("{coarse} {fine}")
-  }
-  
-  #[inline]
-  fn repr_addr(&self) -> String {
-      let (msb, lsb) = self.addr;
-      format!("{msb} {lsb}")
-  }
-}
-
-impl FourteenBit for Nrpn {}
-
-impl MessageKind for Rpn {
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
-    vec![
-      CC|ch, RPN_MSB, 0x00, RPN_LSB, self.addr as u8, 
-      CC|ch, RPN_VAL_MSB, self.val.0, RPN_VAL_LSB, self.val.1,
-      CC|ch, RPN_MSB, 127, CC|ch, RPN_LSB, 127 // NULL
-    ]
-  }
-
-  #[inline]
-  fn validate_address(&self) -> bool {
-    true
-  }
-  
-  #[inline]
-  fn validate_value(&self) -> bool {
-    let (coarse, fine) = self.val;
-    coarse < 128 && fine < 128
-  }
-
-  #[inline]
-  fn repr(&self) -> String {
-    let (coarse, fine) = self.val;
-    format!("{coarse} {fine}")
-  }
-  
-  #[inline]
-  fn repr_addr(&self) -> String {
-      format!("{:?}", self.addr)
-  }
-}
-
-impl FourteenBit for Rpn {}
-
-impl MessageKind for Cc {
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
-      vec![CC|ch, self.addr, self.val]
-  }
-  
-  fn validate_address(&self) -> bool {
-    self.addr < 128
-  }
-  
-  fn validate_value(&self) -> bool {
-    self.val < 128
-  }
-
-  fn repr(&self) -> String {
-    format!("{}", self.val)
-  }
-
-  fn repr_addr(&self) -> String {
-    format!("{}", self.addr)
-  }
-}
-
-impl<'a> MessageKind for SysEx<'a> {
-  fn to_bytes(&self, _ch: u8) -> Vec<u8> {
-      self.data.to_vec()
-  }
-  
-  fn validate_address(&self) -> bool {
-    let first = self.data.first();
-    let last = self.data.last();
-    matches! ((first, last), (Some(0xF0), Some(0xF7))) 
-  }
-  
-  fn validate_value(&self) -> bool { true }
-
-  fn repr(&self) -> String {
-    format!("{:?}", self.data)
-  }
-
-  fn repr_addr(&self) -> String {
-      format!("SysEx {} bytes", self.data.len())
-  }
-}
 
 impl<T: MessageKind> Message<T> {
   pub fn new(kind: T) -> Result<Self, MidiMessageError> {
@@ -209,14 +96,6 @@ impl<T: MessageKind> Message<T> {
       err_send_log(p.send(&msg))
     } 
   }
-
-  // pub fn update(&mut self, kind: T) -> Result<(), String> {
-  //   if !T::validate_value(&kind) {
-  //     return Err(format!("Too big a value: {}", T::repr(&kind)))
-  //   }
-  //   self.kind = kind;
-  //   Ok(())
-  // }
 }
 
 impl Message<Cc> {
@@ -299,6 +178,36 @@ impl<'a> Message<SysEx<'a>> {
   }
 }
 
+impl Message<NoteOn> {
+  pub fn update_velocity(&mut self, velo: u8) -> Result<(), String> {
+    if !self.kind.validate_value() {
+      return Err(format!("Too big a value: {}", &self.kind.repr()))
+    }
+    self.kind.velo = velo;
+    Ok(())
+  }
+  
+  pub fn update_note(&mut self, note: u8) -> Result<(), String> {
+    if !self.kind.validate_value() {
+      return Err(format!("Too big a value: {}", &self.kind.repr()))
+    }
+    self.kind.note = note;
+    Ok(())
+  }
+
+  pub fn update(&mut self, note: u8, velo: u8) -> Result<(), String> {
+    if !self.kind.validate_value() {
+      return Err(format!("Too big a value: {}", &self.kind.repr()))
+    }
+    if !self.kind.validate_address() { 
+      return Err(format!("Too big a value: {}", &self.kind.repr_addr()))
+    }
+    self.kind.note = note;
+    self.kind.velo = velo;
+    Ok(())
+  }
+}
+
 /// Sends an Cc message to the given Output. 
 ///
 /// Contiuous Controller message
@@ -353,3 +262,20 @@ pub fn sysex(port: &Arc<Mutex<Output>>, data: &[u8]) {
 }
 
 
+
+/// sends a NOTE ON message with channel, note and velocity data. 
+pub fn note_on(port: &Arc<Mutex<Output>>, ch: u8, note: u8, velo: u8) {
+  if let Ok(mut p) = port.try_lock() { 
+    err_send_log(p.send(&[(NOTE_ON|ch), note, velo]));
+  }
+}
+
+/// sends a NOTE OFF message with channel and note data. 
+/// velocity is omitted, since it is seldom used. 
+///
+/// (a velocity of 64 is sent in the byte message, as is tradition)
+pub fn note_off(port: &Arc<Mutex<Output>>, ch: u8, note: u8) {
+  if let Ok(mut p) = port.try_lock() { 
+    err_send_log(p.send(&[(NOTE_OFF|ch), note, DEFAULT_NOTE_OFF_VEL]));
+  }
+}

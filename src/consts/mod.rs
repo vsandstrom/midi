@@ -15,6 +15,7 @@ pub const MS_IN_NANO:         u32 = 1_000_000;
 pub mod note {
   pub const NOTE_ON:          u8 = 0b10010000;
   pub const NOTE_OFF:         u8 = 0b10000000;
+  pub(crate) const DEFAULT_NOTE_OFF_VEL: u8 = 64;
 }
 
 pub mod transport {
@@ -37,3 +38,4 @@ pub mod message {
   pub const SYSEX_BEGIN:      u8 = 0xF0;
   pub const SYSEX_END:        u8 = 0xF7;
 }
+

@@ -1,11 +1,11 @@
 use crate::{
-  Arc, Mutex,
-  util::logging::err_send_log,
   connection::Output,
-  consts::note::{NOTE_ON, NOTE_OFF}
+  consts::note::{NOTE_OFF, NOTE_ON, DEFAULT_NOTE_OFF_VEL},
+  util::logging::err_send_log,
+  Arc,
+  Mutex
 };
 
-const DEFAULT_NOTE_OFF_VEL: u8 = 64;
 
 /// sends a NOTE ON message with channel, note and velocity data. 
 pub fn note_on(port: &Arc<Mutex<Output>>, ch: u8, note: u8, velo: u8) {
