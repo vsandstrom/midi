@@ -28,7 +28,7 @@ use cc::Cc;
 use nrpn::Nrpn;
 use rpn::{Rpn, RpnKind};
 use sysex::SysEx;
-use note::{NoteOff, NoteOn};
+use note::NoteOn;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Message<T: MessageKind> {
@@ -48,6 +48,12 @@ pub trait MessageKind {
   /// Returns a string representation of the Address part of this particular MIDI message type
   fn repr_addr(&self) -> String;
 }
+
+// pub trait TransportTrait {
+//   fn to_bytes(&self) -> u8;
+//   fn repr(&self) -> u8;
+// }
+
 
 #[derive(Debug, Clone)]
 pub enum MidiMessageError {
@@ -90,7 +96,7 @@ impl<T: MessageKind> Message<T> {
   /// or bigger than (128, 128) if ['Message<Nrpn'],
   /// because the underlying ['MidiOutputConnection']
   /// from the ['midir'](https://github.com/Boddlnagg/midir) crate allows this. 
-  pub fn message(&self, port: &Arc<Mutex<Output>>, ch: u8) { 
+  pub fn send(&self, port: &Arc<Mutex<Output>>, ch: u8) { 
     let msg = T::to_bytes(&self.kind, ch);
     if let Ok(mut p) = port.try_lock() {
       err_send_log(p.send(&msg))

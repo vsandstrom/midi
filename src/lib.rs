@@ -43,3 +43,25 @@ use midir::SendError;
 pub use midir::{MidiOutputConnection, MidiInputConnection};
 
 
+#[cfg(test)]
+mod tests {
+  use super::*;
+use self::connection::Output;
+use std::time::Duration;
+use self::consts::MS_IN_NANO;
+use crate::transport::sleep;
+use self::message::cc::Cc;
+use self::message::Message;
+
+  #[test]
+  fn test_cc() {
+    let mut msg = Message::new(Cc{addr: 1, val: 100}).unwrap();
+    let _ = Output::new("IAC-drivrutin Buss 1", |port| {
+      for i in 1..=10 {
+        msg.send(&port, 0);
+        sleep(Duration::new(0, MS_IN_NANO * 100));
+        msg.update_value(100 + i).unwrap()
+      }
+    });
+  }
+}

@@ -11,9 +11,7 @@ pub enum RpnKind{
   ModDepthRange  = 0x05
 }
 
-
 pub struct Rpn  { pub addr: RpnKind, pub val: (u8, u8) }
-
 
 impl MessageKind for Rpn {
   fn to_bytes(&self, ch: u8) -> Vec<u8> {
@@ -25,9 +23,7 @@ impl MessageKind for Rpn {
   }
 
   #[inline]
-  fn validate_address(&self) -> bool {
-    true
-  }
+  fn validate_address(&self) -> bool { true }
   
   #[inline]
   fn validate_value(&self) -> bool {
@@ -42,10 +38,7 @@ impl MessageKind for Rpn {
   }
   
   #[inline]
-  fn repr_addr(&self) -> String {
-      format!("{:?}", self.addr)
-  }
+  fn repr_addr(&self) -> String { format!("{:?}", self.addr) }
 }
-
 
 impl FourteenBit for Rpn {}

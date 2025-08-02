@@ -10,7 +10,6 @@ use crate::{Arc, Mutex, connection::Output,
 /// re-export from spin_sleep crate
 pub use spin_sleep::{SpinSleeper, SpinStrategy, sleep};
 
-
 pub fn start(port: &Arc<Mutex<Output>>) {
   if let Ok(mut p) = port.try_lock() {
     err_send_log(p.send(&[START]));

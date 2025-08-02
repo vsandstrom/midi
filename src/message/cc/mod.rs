@@ -7,20 +7,12 @@ impl MessageKind for Cc {
       vec![CC|ch, self.addr, self.val]
   }
   
-  fn validate_address(&self) -> bool {
-    self.addr < 128
-  }
+  fn validate_address(&self) -> bool { self.addr < 128 }
   
-  fn validate_value(&self) -> bool {
-    self.val < 128
-  }
+  fn validate_value(&self) -> bool { self.val < 128 }
 
-  fn repr(&self) -> String {
-    format!("{}", self.val)
-  }
+  fn repr(&self) -> String { format!("{}", self.val) }
 
-  fn repr_addr(&self) -> String {
-    format!("{}", self.addr)
-  }
+  fn repr_addr(&self) -> String { format!("{}", self.addr) }
 }
 
