@@ -30,6 +30,15 @@ use rpn::{Rpn, RpnKind};
 use sysex::SysEx;
 use note::{NoteOff, NoteOn};
 
+pub enum MidiMessage<'a> {
+  Cc(Message<Cc>),
+  Nrpn(Message<Nrpn>),
+  Rpn(Message<Rpn>),
+  SysEx(Message<SysEx<'a>>),
+  NoteOn(Message<NoteOn>),
+  NoteOff(Message<NoteOff>)
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Message<T: MessageKind> {
   kind: T

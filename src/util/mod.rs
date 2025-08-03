@@ -1,5 +1,13 @@
 use crate::SendError;
 
+pub struct Channel(u8);
+impl Channel {
+  fn new(channel: u8) -> Result<Self, String> {
+    if channel < 16 {return Ok(Channel(channel))}
+    Err("Channel is not a value between 0 an 15.".to_string())
+  }
+}
+
 pub(crate) fn calc_midi_ppq(bpm: f64) -> f64 { 60.0 / (28.0 * bpm) }
 
 pub mod logging {
