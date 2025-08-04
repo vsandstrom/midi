@@ -5,7 +5,7 @@ pub struct SysEx<'a> { pub data: Cow<'a, [u8]> }
 
 impl<'a> MessageKind for SysEx<'a> {
   #[inline]
-  fn to_bytes(&self, _ch: u8) -> Vec<u8> {
+  fn to_bytes(&self, _ch: Channel) -> Vec<u8> {
       self.data.to_vec()
   }
   

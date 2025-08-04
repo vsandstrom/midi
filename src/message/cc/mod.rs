@@ -3,7 +3,7 @@ use super::*;
 pub struct Cc { pub addr: u8, pub val: u8 }
 
 impl MessageKind for Cc {
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
+  fn to_bytes(&self, ch: Channel) -> Vec<u8> {
       vec![CC|ch, self.addr, self.val]
   }
   

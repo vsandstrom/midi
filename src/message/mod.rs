@@ -7,7 +7,7 @@ pub mod note;
 use std::borrow::Cow;
 use crate::{
   connection::Output, 
-  consts::message::{
+  consts::{message::{
     CC,
     NRPN_LSB,
     NRPN_MSB,
@@ -17,9 +17,8 @@ use crate::{
     RPN_MSB,
     RPN_VAL_LSB,
     RPN_VAL_MSB,
-  },
-  consts::note::{NOTE_ON, NOTE_OFF, DEFAULT_NOTE_OFF_VEL},
-  util::logging::err_send_log,
+  }, note::{DEFAULT_NOTE_OFF_VEL, NOTE_OFF, NOTE_ON}},
+  util::{logging::err_send_log, Channel},
   Arc,
   Mutex
 };
@@ -30,6 +29,14 @@ use rpn::{Rpn, RpnKind};
 use sysex::SysEx;
 use note::NoteOn;
 
+pub enum MidiMessage<'a> {
+  Cc(Message<Cc>),
+  Nrpn(Message<Nrpn>),
+  Rpn(Message<Rpn>),
+  SysEx(Message<SysEx<'a>>),
+  NoteOn(Message<NoteOn>),
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Message<T: MessageKind> {
   kind: T
@@ -38,7 +45,7 @@ pub struct Message<T: MessageKind> {
 
 pub trait MessageKind {
   /// Returns a MIDI message formatted in bytes
-  fn to_bytes(&self, ch: u8) -> Vec<u8>;
+  fn to_bytes(&self, ch: Channel) -> Vec<u8>;
   /// Validates the MIDI message type Address
   fn validate_address(&self) -> bool;
   /// Validates the MIDI message type Value
@@ -96,7 +103,7 @@ impl<T: MessageKind> Message<T> {
   /// or bigger than (128, 128) if ['Message<Nrpn'],
   /// because the underlying ['MidiOutputConnection']
   /// from the ['midir'](https://github.com/Boddlnagg/midir) crate allows this. 
-  pub fn send(&self, port: &Arc<Mutex<Output>>, ch: u8) { 
+  pub fn send(&self, port: &Arc<Mutex<Output>>, ch: Channel) { 
     let msg = T::to_bytes(&self.kind, ch);
     if let Ok(mut p) = port.try_lock() {
       err_send_log(p.send(&msg))

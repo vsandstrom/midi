@@ -6,7 +6,7 @@ pub struct NoteOff { pub note: u8 }
 
 impl MessageKind for NoteOn {
   #[inline]
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
+  fn to_bytes(&self, ch: Channel) -> Vec<u8> {
     vec![(NOTE_OFF|ch), self.note, DEFAULT_NOTE_OFF_VEL]
   }
 
@@ -26,7 +26,7 @@ impl MessageKind for NoteOn {
 
 impl MessageKind for NoteOff {
   #[inline]
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
+  fn to_bytes(&self, ch: Channel) -> Vec<u8> {
     vec![(NOTE_ON|ch), self.note, DEFAULT_NOTE_OFF_VEL]
   }
 

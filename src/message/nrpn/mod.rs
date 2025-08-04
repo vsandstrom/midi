@@ -3,7 +3,7 @@ use super::*;
 pub struct Nrpn { pub addr: (u8,u8), pub val: (u8, u8) }
 
 impl MessageKind for Nrpn {
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
+  fn to_bytes(&self, ch: Channel) -> Vec<u8> {
       vec![
         CC|ch, NRPN_MSB, self.addr.0, CC|ch, NRPN_LSB, self.addr.1, 
         CC|ch, NRPN_VAL_MSB, self.val.0, CC|ch, NRPN_VAL_LSB, self.val.1, 

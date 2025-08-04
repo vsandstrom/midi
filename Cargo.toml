@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 midir = "0.10.0"
 spin_sleep = "1.2.1"
+ux = "0.1.6"

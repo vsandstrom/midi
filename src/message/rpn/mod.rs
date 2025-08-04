@@ -14,7 +14,7 @@ pub enum RpnKind{
 pub struct Rpn  { pub addr: RpnKind, pub val: (u8, u8) }
 
 impl MessageKind for Rpn {
-  fn to_bytes(&self, ch: u8) -> Vec<u8> {
+  fn to_bytes(&self, ch: Channel) -> Vec<u8> {
     vec![
       CC|ch, RPN_MSB, 0x00, RPN_LSB, self.addr as u8, 
       CC|ch, RPN_VAL_MSB, self.val.0, RPN_VAL_LSB, self.val.1,
