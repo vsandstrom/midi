@@ -2,6 +2,9 @@ use crate::SendError;
 use std::ops::BitOr;
 
 #[derive(Clone, Copy)]
+/// Wrapper around a `u8` that represents the MIDI channel. 
+/// Will make sure that channel is within a range of 
+/// 0 - 15, representing 16 channels. 
 pub struct Channel(pub u8);
 impl Channel {
   pub fn new(channel: u8) -> Result<Self, String> {
