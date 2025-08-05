@@ -41,4 +41,10 @@ impl MessageKind for Rpn {
   fn repr_addr(&self) -> String { format!("{:?}", self.addr) }
 }
 
-impl FourteenBit for Rpn {}
+impl Rpn {
+  pub const MAX: u16 = 0x3fff;
+  pub fn split(num: u16) -> (u8, u8) {
+    ((num >> 7) as u8, (num & 0b0111_1111) as u8)
+  }
+
+}

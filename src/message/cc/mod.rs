@@ -16,3 +16,6 @@ impl MessageKind for Cc {
   fn repr_addr(&self) -> String { format!("{}", self.addr) }
 }
 
+impl Cc {
+  pub const MAX: u8 = 0x7f;
+}

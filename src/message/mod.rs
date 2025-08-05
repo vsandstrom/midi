@@ -4,7 +4,7 @@ pub mod rpn;
 pub mod sysex;
 pub mod note;
 
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Display};
 use crate::{
   connection::Output, 
   consts::{message::{
@@ -68,10 +68,28 @@ pub enum MidiMessageError {
   Value(String)
 }
 
-pub trait FourteenBit {
-  fn split(num: u16) -> (u8, u8) {
-    ((num >> 7) as u8, (num & 0b0111_1111) as u8)
+impl Display for MidiMessageError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    todo!()
   }
+}
+
+impl std::error::Error for MidiMessageError {
+  fn cause(&self) -> Option<&dyn std::error::Error> {
+    todo!()
+      
+  }
+  fn description(&self) -> &str {
+    todo!()
+      
+  }
+  fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+    todo!()
+  }
+}
+
+pub trait FourteenBit {
+  fn split(num: u16) -> (u8, u8);
 }
 
 
