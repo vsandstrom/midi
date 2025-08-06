@@ -39,8 +39,13 @@ impl MessageKind for Nrpn {
 
 impl Nrpn {
   pub const MAX: u16 = 0x3fff;
+}
 
-  pub fn split(num: u16) -> (u8, u8) {
-    ((num >> 7) as u8, (num & 0b0111_1111) as u8)
+impl FourteenBit for Nrpn {
+  fn split(num: u16) -> Result<(u8, u8), FourteenBitError> {
+    if num & 0b1100_0000_0000_0000 != 0 { 
+      return Err(FourteenBitError::Overflow(format!("Num {num} bigger than {}", Self::MAX)))
+    }
+    Ok(((num >> 7) as u8, (num & 0b0111_1111) as u8))
   }
 }

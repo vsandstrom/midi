@@ -88,9 +88,15 @@ impl std::error::Error for MidiMessageError {
   }
 }
 
-pub trait FourteenBit {
-  fn split(num: u16) -> (u8, u8);
+pub enum FourteenBitError {
+  Overflow(String)
 }
+
+pub trait FourteenBit {
+  fn split(num: u16) -> Result<(u8, u8), FourteenBitError>;
+}
+
+
 
 
 impl<T: MessageKind> Message<T> {
