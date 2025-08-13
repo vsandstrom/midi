@@ -8,7 +8,7 @@ use std::ops::BitOr;
 pub struct Channel(pub u8);
 impl Channel {
   pub fn new(channel: u8) -> Result<Self, String> {
-    if 0b11110000 & channel != 0 {
+    if 0b11110000 & channel == 0 {
       Ok(Channel(channel))
     } else {
       Err("Channel is not a value between 0 an 15.".to_string())
