@@ -42,7 +42,7 @@ use midi::{
 
 fn main() {
     let data = Arc::new(Mutex::new(VecDeque::<Vec<u8>>::new()));
-    let port = Input::new("IAC Drivrutin Buss 1", data.clone(), move |timecode, msg, _data| {
+    let port = Input::new("IAC Driver Bus 1", data.clone(), move |timecode, msg, queue| {
         print!("{timecode}");
         // match on midi input type
         match msg[0] {
@@ -54,7 +54,7 @@ fn main() {
             _ => panic!("unknown midi message")
         }
         // add message to data queue
-        data.try_lock().unwrap().push_back(msg.into());
+        queue.try_lock().unwrap().push_back(msg.into());
     });
 }
 ```
