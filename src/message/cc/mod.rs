@@ -8,11 +8,8 @@ impl MessageKind for Cc {
   }
   
   fn validate_address(&self) -> bool { self.addr < 128 }
-  
   fn validate_value(&self) -> bool { self.val < 128 }
-
   fn repr(&self) -> String { format!("{}", self.val) }
-
   fn repr_addr(&self) -> String { format!("{}", self.addr) }
 }
 

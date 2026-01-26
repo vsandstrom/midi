@@ -43,7 +43,7 @@ impl BitOr for Channel {
   }
 }
 
-pub(crate) fn calc_midi_ppq(bpm: f64) -> f64 { 60.0 / (28.0 * bpm) }
+pub fn calc_midi_ppq(bpm: f64) -> f64 { 60.0 / (28.0 * bpm) }
 
 pub mod logging {
   use super::*;

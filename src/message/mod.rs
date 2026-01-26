@@ -3,12 +3,14 @@ pub mod nrpn;
 pub mod rpn;
 pub mod sysex;
 pub mod note;
+pub mod pitchbend;
 
 use std::{borrow::Cow, fmt::Display};
 use crate::{
   connection::Output, 
   consts::{message::{
     CC,
+    PB,
     NRPN_LSB,
     NRPN_MSB,
     NRPN_VAL_LSB,
@@ -24,10 +26,14 @@ use crate::{
 };
 
 use cc::Cc;
-use nrpn::Nrpn;
+use nrpn::{
+  Nrpn, 
+  no_term::NrpnNoTerminator
+};
 use rpn::{Rpn, RpnKind};
 use sysex::SysEx;
 use note::NoteOn;
+use self::pitchbend::PitchBend;
 
 pub enum MidiMessage<'a> {
   Cc(Message<Cc>),
@@ -88,6 +94,7 @@ impl std::error::Error for MidiMessageError {
   }
 }
 
+#[derive(Debug)]
 pub enum FourteenBitError {
   Overflow(String)
 }
@@ -157,7 +164,52 @@ impl Message<Cc> {
   }
 }
 
+impl Message<PitchBend> {
+  pub fn update_value(&mut self, val: (u8,u8)) -> Result<(), String> {
+    if !self.kind.validate_value() {
+      return Err(format!("Too big a value: {}", &self.kind.repr()))
+    }
+    self.kind.msb = val.0;
+    self.kind.lsb = val.1;
+    Ok(())
+  }
+
+  pub fn update(&mut self, msb: u8, lsb: u8) -> Result<(), String> {
+    if !self.kind.validate_value() {
+      return Err(format!("Too big a value: {}", &self.kind.repr()))
+    }
+    if !self.kind.validate_address() { 
+      return Err(format!("Too big a value: {}", &self.kind.repr_addr()))
+    }
+    self.kind.msb = msb;
+    self.kind.lsb = lsb;
+    Ok(())
+  }
+}
+
 impl Message<Nrpn> {
+  pub fn update_value(&mut self, val: &(u8, u8)) -> Result<(), String> {
+    if !self.kind.validate_value() {
+      return Err(format!("Too big a value: {}", &self.kind.repr()))
+    }
+    self.kind.val = *val;
+    Ok(())
+  }
+
+  pub fn update(&mut self, addr: &(u8, u8), val: &(u8, u8)) -> Result<(), String> {
+    if !self.kind.validate_value() {
+      return Err(format!("Too big a value: {}", &self.kind.repr()))
+    }
+    if !self.kind.validate_address() { 
+      return Err(format!("Too big a value: {}", &self.kind.repr_addr()))
+    }
+    self.kind.addr = *addr;
+    self.kind.val = *val;
+    Ok(())
+  }
+}
+
+impl Message<NrpnNoTerminator> {
   pub fn update_value(&mut self, val: &(u8, u8)) -> Result<(), String> {
     if !self.kind.validate_value() {
       return Err(format!("Too big a value: {}", &self.kind.repr()))
@@ -250,6 +302,16 @@ impl Message<NoteOn> {
 /// Contiuous Controller message
 pub fn cc(port: &Arc<Mutex<Output>>, ch: u8, addr: u8, val: u8) {
   let msg = [CC|ch, addr, val];
+  if let Ok(mut p) = port.try_lock() {
+    err_send_log(p.send(&msg))
+  } 
+}
+
+/// Sends an Cc message to the given Output. 
+///
+/// Contiuous Controller message
+pub fn pitchbend(port: &Arc<Mutex<Output>>, ch: u8, msb: u8, lsb: u8) {
+  let msg = [PB|ch, msb, lsb];
   if let Ok(mut p) = port.try_lock() {
     err_send_log(p.send(&msg))
   } 

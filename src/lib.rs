@@ -1,4 +1,3 @@
-
 /// Convenience module for creating Midi Input/Output connections
 /// ```ignore
 /// // Output: 
@@ -19,6 +18,7 @@
 ///         }
 ///     );
 /// ```
+pub mod macros;
 pub mod connection;
 pub mod note;
 pub mod transport;

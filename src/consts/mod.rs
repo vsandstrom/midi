@@ -26,16 +26,29 @@ pub mod transport {
 }
 
 pub mod message {
+  // Address : Most valuable byte
   pub const NRPN_MSB:         u8 = 0x63;
+  // Address : Least valuable byte
   pub const NRPN_LSB:         u8 = 0x62;
+  // Address : Most valuable byte
   pub const RPN_MSB:          u8 = 0x65;
+  // Address : Least valuable byte
   pub const RPN_LSB:          u8 = 0x64;
+  // Value : Most valuable byte
   pub const NRPN_VAL_MSB:     u8 = 0x06;
+  // Value : Least valuable byte
   pub const NRPN_VAL_LSB:     u8 = 0x26;
+  // Value : Most valuable byte
   pub const RPN_VAL_MSB:      u8 = NRPN_VAL_MSB;
+  // Value : Least valuable byte
   pub const RPN_VAL_LSB:      u8 = NRPN_VAL_LSB;
+  // Control Change
   pub const CC:               u8 = 0xB0;
+  /// Pitchbend
+  pub const PB:               u8 = 0xE0;
+  // SysEx Begin sequence
   pub const SYSEX_BEGIN:      u8 = 0xF0;
+  // SysEx End sequence
   pub const SYSEX_END:        u8 = 0xF7;
 }
 

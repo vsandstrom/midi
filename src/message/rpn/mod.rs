@@ -15,10 +15,14 @@ pub struct Rpn  { pub addr: RpnKind, pub val: (u8, u8) }
 
 impl MessageKind for Rpn {
   fn to_bytes(&self, ch: Channel) -> Vec<u8> {
+    
     vec![
-      CC|ch, RPN_MSB, 0x00, RPN_LSB, self.addr as u8, 
-      CC|ch, RPN_VAL_MSB, self.val.0, RPN_VAL_LSB, self.val.1,
-      CC|ch, RPN_MSB, 127, CC|ch, RPN_LSB, 127 // NULL
+      CC|ch, RPN_MSB, self.addr as u8, 
+      CC|ch, RPN_LSB, 0x00, 
+      CC|ch, RPN_VAL_MSB, self.val.0,
+      CC|ch, RPN_VAL_LSB, self.val.1,
+      CC|ch, RPN_MSB, 127, // NULL
+      CC|ch, RPN_LSB, 127, // NULL
     ]
   }
 
@@ -27,14 +31,12 @@ impl MessageKind for Rpn {
   
   #[inline]
   fn validate_value(&self) -> bool {
-    let (coarse, fine) = self.val;
-    coarse < 128 && fine < 128
+    self.val.0 < 128 && self.val.1 < 128
   }
 
   #[inline]
   fn repr(&self) -> String {
-    let (coarse, fine) = self.val;
-    format!("{coarse} {fine}")
+    format!("{} {}", self.val.0, self.val.1)
   }
   
   #[inline]
