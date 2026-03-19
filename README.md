@@ -8,19 +8,26 @@ Output MIDI messages:
 ```rust
 use midi::{
     connection::Output,
-    messages::cc,
-    transport::sleep
+    messages::{Message, cc::Cc},
+    transport::sleep,
+    util::Channel,
 };
 use std::time::Duration;
 
-let channel = 0;
+let channel: Channel = Channel(0);
 let addr = 1;
-let dur = Duration::new(1, 0);
-// Use callback with `loop` to quickly generate a MIDI sequence. 
+let dur = Duration::from_millis(100);
+// check that cc address and value is within range (0-127)
+let msg: Message<Cc> = Message::cc(addr, 0).unwrap(); 
+
 let _ = Output::new("IAC Driver Bus 1", |port| {
-    for i in 0..128 {
-        cc(&port, channel, addr, i);
-        sleep(dur);
+    loop {
+        for i in 0..128 {
+            msg.send(port, channel);
+            sleep(dur);
+            // check that value is within range (0-127)
+            msg.update_value(i).unwrap();
+        }
     }
 })
 ```

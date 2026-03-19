@@ -103,9 +103,6 @@ pub trait FourteenBit {
   fn split(num: u16) -> Result<(u8, u8), FourteenBitError>;
 }
 
-
-
-
 impl<T: MessageKind> Message<T> {
   pub fn new(kind: T) -> Result<Self, MidiMessageError> {
     if !T::validate_address(&kind) { 
@@ -128,6 +125,7 @@ impl<T: MessageKind> Message<T> {
     })
   }
 
+
   /// Send a MIDI message
   /// Does not object at too big u8 values, external check advised.
   /// Will accept values bigger than 128 if ['Message<CC>'] 
@@ -143,6 +141,8 @@ impl<T: MessageKind> Message<T> {
 }
 
 impl Message<Cc> {
+  pub fn cc(addr: u8, val: u8) -> Result<Message<Cc>, MidiMessageError> { Message::<Cc>::new(Cc { addr, val }) }
+
   pub fn update_value(&mut self, val: u8) -> Result<(), String> {
     if !self.kind.validate_value() {
       return Err(format!("Too big a value: {}", &self.kind.repr()))
@@ -165,6 +165,8 @@ impl Message<Cc> {
 }
 
 impl Message<PitchBend> {
+  pub fn pb(msb: u8, lsb: u8) -> Result<Message<PitchBend>, MidiMessageError> { Message::new(PitchBend { msb, lsb }) }
+
   pub fn update_value(&mut self, val: (u8,u8)) -> Result<(), String> {
     if !self.kind.validate_value() {
       return Err(format!("Too big a value: {}", &self.kind.repr()))
@@ -188,6 +190,8 @@ impl Message<PitchBend> {
 }
 
 impl Message<Nrpn> {
+  pub fn nrpn(addr: (u8, u8), val: (u8, u8)) -> Result<Message<Nrpn>, MidiMessageError> { Message::new(Nrpn { addr, val }) }
+
   pub fn update_value(&mut self, val: &(u8, u8)) -> Result<(), String> {
     if !self.kind.validate_value() {
       return Err(format!("Too big a value: {}", &self.kind.repr()))
@@ -210,6 +214,8 @@ impl Message<Nrpn> {
 }
 
 impl Message<NrpnNoTerminator> {
+  pub fn nrpn_no_terminator(addr: (u8, u8), val: (u8, u8)) -> Result<Message<NrpnNoTerminator>, MidiMessageError> { Message::new(NrpnNoTerminator{ addr, val }) }
+
   pub fn update_value(&mut self, val: &(u8, u8)) -> Result<(), String> {
     if !self.kind.validate_value() {
       return Err(format!("Too big a value: {}", &self.kind.repr()))
@@ -233,6 +239,8 @@ impl Message<NrpnNoTerminator> {
 
 
 impl Message<Rpn> {
+  pub fn rpn(addr: RpnKind, val: (u8, u8)) -> Result<Message<Rpn>, MidiMessageError> { Message::new(Rpn { addr, val }) }
+
   pub fn update_value(&mut self, val: &(u8, u8)) -> Result<(), String> {
     if !self.kind.validate_value() {
       return Err(format!("Too big a value: {}", &self.kind.repr()))
@@ -256,6 +264,11 @@ impl Message<Rpn> {
 }
 
 impl<'a> Message<SysEx<'a>> {
+  pub fn sysex(data: &'a [u8]) -> Result<Message<SysEx<'a>>, MidiMessageError> { 
+    let data = Cow::Borrowed(data);
+    Message::new(SysEx { data })
+  }
+
   /// Does not check for any errors in byte formatting. 
   ///
   pub fn update(&mut self, data: &'a [u8]) -> Result<(), String> {
@@ -268,6 +281,8 @@ impl<'a> Message<SysEx<'a>> {
 }
 
 impl Message<NoteOn> {
+  pub fn note(note: u8, velo: u8) -> Result<Message<NoteOn>, MidiMessageError> { Message::new(NoteOn { note, velo}) }
+
   pub fn update_velocity(&mut self, velo: u8) -> Result<(), String> {
     if !self.kind.validate_value() {
       return Err(format!("Too big a value: {}", &self.kind.repr()))
