@@ -187,3 +187,13 @@ impl<T, F> MidiConnection for Input<T, F>
     }
   }
 }
+
+pub struct InputPorts ();
+impl InputPorts {
+  pub fn ports() -> Option<Vec<String>> {
+    if let Ok(input) = MidiInput::new("hello") {
+      return Some(input.ports().iter().map(|p| p.id()).collect())
+    }
+    None
+  }
+}
