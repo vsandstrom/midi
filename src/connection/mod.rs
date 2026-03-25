@@ -1,21 +1,14 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData};
 
 use crate::{
-  util::logging::err_log,
   MidiOutputConnection,
 };
 
 use midir::{
-  MidiInput,
-  MidiInputConnection,
-  MidiInputPort,
-  MidiOutput,
-  MidiOutputPort
+  MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputPort
 };
 
 use std::sync::{Arc, Mutex};
-
-
 
 /// Convenience struct for creating a Midi Output connection.
 /// Provides the option to create a Midi runner callback closure. 
@@ -40,18 +33,17 @@ impl Output {
   ///
   /// If no closure is passed to the constructor, the `Self` is returned,
   /// otherwise it will return after the callback has finished. 
-  pub fn new<F>(device: &'static str, mut callback: F) -> Arc<Mutex<Self>>
+  pub fn new<F>(device: &'static str, mut callback: F) -> Result<Arc<Mutex<Self>>, String>
     where F: FnMut(Arc<Mutex<Output>>),
   {
     match Self::init(device) {
-
       Ok(c) => {
         let output = Self{ conn: c };
         let arc_output = Arc::new(Mutex::new(output));
         callback(arc_output.clone());
-        arc_output
+        Ok(arc_output)
       },
-      Err(e) => err_log(e)
+      Err(e) => Err(e)
     }
 
 
@@ -113,14 +105,14 @@ impl<T, F> Input<T, F>
     T: Send + 'static,
     F: FnMut(u64, &[u8], &mut T) + Send + 'static,
 {
-  pub fn new(device: &'static str, data: T, callback: F) -> Self
+  pub fn new(device: &'static str, data: T, callback: F) -> Result<Self, String>
   {
     match Self::init(device, data, callback) {
-      Ok(c) => Self{
+      Ok(c) => Ok(Self{
         conn: c,
         _marker: PhantomData
-      },
-      Err(e) => err_log(e)
+      }),
+      Err(e) => Err(e)
     }
   }
 
@@ -168,6 +160,7 @@ impl MidiConnection for Output {
       Err(e) => Err(format!("could not create MIDI output: {}", e))
     }
   }
+
 }
 
 impl<T, F> MidiConnection for Input<T, F> 
@@ -185,7 +178,6 @@ impl<T, F> MidiConnection for Input<T, F>
       Some(p) => Ok(p.clone()),
       None => Err("could not find input port".to_owned())
     }
-      
   }
   
   fn init_client() -> Result<Self::MidiType, String> {
