@@ -5,7 +5,7 @@ use crate::{
 };
 
 use midir::{
-  MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputPort
+  MidiIO, MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputPort
 };
 
 use std::sync::{Arc, Mutex};
@@ -192,7 +192,15 @@ pub struct InputPorts ();
 impl InputPorts {
   pub fn ports() -> Option<Vec<String>> {
     if let Ok(input) = MidiInput::new("hello") {
-      return Some(input.ports().iter().map(|p| p.id()).collect())
+      return Some(
+        input
+        .ports()
+        .iter()
+        .map(|p| 
+          input
+          .port_name(p)
+          .expect("a device was unplugged during validation"))
+        .collect())
     }
     None
   }
