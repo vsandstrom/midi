@@ -5,7 +5,7 @@ use crate::{
 };
 
 use midir::{
-  MidiIO, MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputPort
+  MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputPort
 };
 
 use std::sync::{Arc, Mutex};

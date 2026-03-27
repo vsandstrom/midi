@@ -76,7 +76,10 @@ pub enum MidiMessageError {
 
 impl Display for MidiMessageError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    todo!()
+    match self {
+      Self::Value(v) => { write!(f, "Midi value is not a valid target: {v}") },
+      Self::Address(a) => { write!(f, "Midi address is not a valid target: {a}")}
+    }
   }
 }
 

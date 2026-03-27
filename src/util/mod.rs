@@ -60,11 +60,5 @@ pub mod logging {
     _ => () 
     }
   }
-
-  pub(crate) fn err_log(e: String) -> ! {
-    eprintln!("{e}");
-    std::process::exit(-1)
-  }
-
 }
 
